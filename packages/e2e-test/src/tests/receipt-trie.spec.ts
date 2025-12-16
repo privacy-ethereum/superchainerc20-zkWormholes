@@ -15,6 +15,7 @@ import {
 import { beforeAll, describe, it, expect } from 'vitest'
 import { envVars } from '@/envVars'
 import { L2NativeSuperchainERC20Abi } from '@/abi/L2NativeSuperchainERC20Abi'
+import { generateReceiptTrieProof } from '@/utils/receiptTrieProof'
 
 const testPrivateKey = generatePrivateKey()
 const testAccount = privateKeyToAccount(testPrivateKey)
@@ -141,33 +142,11 @@ describe('receipt trie', async () => {
   })
 
   it.skip('should format data to build receipt-trie', async () => {
-    // Import the utility at runtime to avoid top-level await issues
-    const {
-      generateReceiptTrieProof,
-      verifyReceiptTrieProof,
-      formatProofForCircuit,
-    } = await import('@/utils/receiptTrieProof')
-
     // Find the index of our receipt in the block
     const receiptIndex = receipts.findIndex(
       (r) => r.transactionHash === receipt.transactionHash,
     )
     expect(receiptIndex).toBeGreaterThanOrEqual(0)
-
-    console.log('Receipt Info:')
-    console.log('- Receipt index:', receiptIndex)
-    console.log('- Receipt type:', receipt.type)
-    console.log('- Total receipts in block:', receipts.length)
-    console.log('- Expected root:', receiptRootHash)
-    console.log('- Receipt object keys:', Object.keys(receipt))
-    console.log(
-      '- Receipt:',
-      JSON.stringify(
-        receipt,
-        (key, value) => (typeof value === 'bigint' ? value.toString() : value),
-        2,
-      ),
-    )
 
     // Generate the proof
     const proof = await generateReceiptTrieProof(receipts, receiptIndex)

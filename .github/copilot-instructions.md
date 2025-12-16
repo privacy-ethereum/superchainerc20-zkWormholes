@@ -161,7 +161,7 @@ DOMAIN_ADDR = 3       // For burn address derivation
 ```bash
 # In packages/circuits/
 # 1. Compile circuit
-circom Withdraw.circom --r1cs --wasm --sym --c
+circom circom/Withdraw.circom --r1cs --wasm --sym --c
 
 # 2. Generate trusted setup (or use existing ceremony)
 snarkjs groth16 setup Withdraw.r1cs pot_final.ptau circuit_0000.zkey

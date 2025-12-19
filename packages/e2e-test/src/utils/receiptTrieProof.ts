@@ -4,7 +4,10 @@ import { TransactionType } from '@ethereumjs/tx'
 import { concatBytes, intToBytes } from '@ethereumjs/util'
 import { bytesToHex, Hex } from 'viem'
 
-// Raw receipt format from eth_getBlockReceipts RPC call
+/**
+ * Raw receipt format from eth_getBlockReceipts RPC call
+ * This not necesarily match the TransactionReceipt type from viem or ethereumjs
+ */
 export type RawRpcReceipt = {
   status: Hex // "0x1" or "0x0"
   cumulativeGasUsed: Hex
@@ -18,11 +21,17 @@ export type RawRpcReceipt = {
   transactionIndex: Hex
 }
 
+/**
+ * Arguments for building a receipt trie
+ */
 type BuildReceiptTrieArgs = {
   receipts: RawRpcReceipt[]
   targetTxIndex: Hex
 }
 
+/**
+ * Return type for building a receipt trie
+ */
 type BuildReceiptTrieReturn = {
   rootHash: Hex
   key: Hex
@@ -57,6 +66,11 @@ function encodeRPCReceipt(receipt: RawRpcReceipt): Uint8Array {
   return concatBytes(intToBytes(txType), encoded)
 }
 
+/**
+ * Build a Merkle Patricia Trie from the given receipts.
+ * @param param0 - The arguments for building the receipt trie.
+ * @returns The return values of a receipt trie
+ */
 export async function buildReceiptTrie({
   receipts,
   targetTxIndex,
@@ -72,9 +86,7 @@ export async function buildReceiptTrie({
 
   const trieRoot = bytesToHex(trie.root())
 
-  // Convert target transaction index to RLP-encoded key
-  const targetTxIndexNum = Number(targetTxIndex)
-  const targetKey = RLP.encode(targetTxIndexNum)
+  const targetKey = RLP.encode(Number(targetTxIndex))
   const proof = await createMerkleProof(trie, targetKey)
 
   return {

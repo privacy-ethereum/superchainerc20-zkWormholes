@@ -1,16 +1,25 @@
 import { createMerkleProof, createMPT } from '@ethereumjs/mpt'
 import { RLP } from '@ethereumjs/rlp'
-import { TransactionType as TransactionTypeEthereumJs } from '@ethereumjs/tx'
-import { concatBytes, hexToBytes, intToBytes } from '@ethereumjs/util'
-import {
-  bytesToHex,
-  Hex,
-  TransactionReceipt,
-  TransactionType as TransactionTypeViem,
-} from 'viem'
+import { TransactionType } from '@ethereumjs/tx'
+import { concatBytes, intToBytes } from '@ethereumjs/util'
+import { bytesToHex, Hex } from 'viem'
+
+// Raw receipt format from eth_getBlockReceipts RPC call
+export type RawRpcReceipt = {
+  status: Hex // "0x1" or "0x0"
+  cumulativeGasUsed: Hex
+  logsBloom: Hex
+  logs: Array<{
+    address: Hex
+    topics: Hex[]
+    data: Hex
+  }>
+  type: Hex // "0x0", "0x1", "0x2", etc.
+  transactionIndex: Hex
+}
 
 type BuildReceiptTrieArgs = {
-  receipts: TransactionReceipt[]
+  receipts: RawRpcReceipt[]
   targetTxIndex: Hex
 }
 
@@ -21,19 +30,10 @@ type BuildReceiptTrieReturn = {
 }
 
 /**
- * Convert a viem TransactionReceipt to ethereumjs TxReceipt format
- * and encode it for the receipt trie
+ * Encode a raw RPC receipt for the receipt trie
  */
-function encodeViemReceipt(receipt: TransactionReceipt): Uint8Array {
-  const typeMap: Record<TransactionTypeViem, TransactionTypeEthereumJs> = {
-    legacy: TransactionTypeEthereumJs.Legacy,
-    eip2930: TransactionTypeEthereumJs.AccessListEIP2930,
-    eip1559: TransactionTypeEthereumJs.FeeMarketEIP1559,
-    eip4844: TransactionTypeEthereumJs.BlobEIP4844,
-    eip7702: TransactionTypeEthereumJs.EOACodeEIP7702,
-  }
-
-  const txType = typeMap[receipt.type] ?? 0
+function encodeRPCReceipt(receipt: RawRpcReceipt): Uint8Array {
+  const txType = Number(receipt.type)
 
   const logs = receipt.logs.map((log) => [
     log.address,
@@ -42,12 +42,17 @@ function encodeViemReceipt(receipt: TransactionReceipt): Uint8Array {
   ])
 
   const encoded = RLP.encode([
-    // zk-wormholes are transactions after byzantium upgrade so status field exists
-    receipt.status === 'success' ? Uint8Array.from([1]) : Uint8Array.from([]),
-    hexToBytes(receipt.cumulativeGasUsed as any as Hex),
-    hexToBytes(receipt.logsBloom),
+    // zk-wormholes txs happen after byzantium, so status field exists
+    receipt.status === '0x1' ? Uint8Array.from([1]) : Uint8Array.from([]),
+    receipt.cumulativeGasUsed,
+    receipt.logsBloom,
     logs,
   ])
+
+  // Legacy transactions (type 0) are NOT prefixed with type byte
+  if (txType === TransactionType.Legacy) {
+    return encoded
+  }
 
   return concatBytes(intToBytes(txType), encoded)
 }
@@ -59,8 +64,8 @@ export async function buildReceiptTrie({
   const trie = await createMPT()
 
   for (const receipt of receipts) {
-    const key = RLP.encode(receipt.transactionIndex)
-    const value = encodeViemReceipt(receipt)
+    const key = RLP.encode(Number(receipt.transactionIndex))
+    const value = encodeRPCReceipt(receipt)
 
     await trie.put(key, value)
   }

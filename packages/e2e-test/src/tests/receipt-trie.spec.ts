@@ -15,7 +15,7 @@ import {
 import { beforeAll, describe, it, expect } from 'vitest'
 import { envVars } from '@/envVars'
 import { L2NativeSuperchainERC20Abi } from '@/abi/L2NativeSuperchainERC20Abi'
-import { buildReceiptTrie } from '@/utils/receiptTrieProof'
+import { buildReceiptTrie, RawRpcReceipt } from '@/utils/receiptTrieProof'
 
 const testPrivateKey = generatePrivateKey()
 const testAccount = privateKeyToAccount(testPrivateKey)
@@ -41,7 +41,7 @@ describe('receipt trie', async () => {
   })
 
   let receipt: TransactionReceipt
-  let receipts: TransactionReceipt[]
+  let receipts: RawRpcReceipt[]
   let receiptsRootHash: Hex
 
   beforeAll(async () => {
@@ -80,7 +80,7 @@ describe('receipt trie', async () => {
     const block = await testClientByChain.supersimL2A.getBlock()
 
     const nreceipts = await testClientByChain.supersimL2A.request({
-      method: 'eth_getBlockReceipts' as any,
+      method: 'eth_getBlockReceipts' as any, // getBlockReceipts is not yet typed in viem but available in most RPCs
       params: [numberToHex(block.number)],
     })
 
@@ -162,7 +162,7 @@ describe('receipt trie', async () => {
     expect(receipts.length).toBeGreaterThanOrEqual(1)
   })
 
-  it.skip('should locally build the receipt trie with the ERC20 transfer log', async () => {
+  it('should locally build the receipt trie with the ERC20 transfer log', async () => {
     const { rootHash } = await buildReceiptTrie({
       receipts,
       targetTxIndex: numberToHex(receipt.transactionIndex),

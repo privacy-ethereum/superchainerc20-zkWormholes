@@ -1,9 +1,9 @@
 [deploy_config]
-salt = "ethers phoenix"
+salt = "zkWormholes ERC20"
 chains = ["op_chain_a","op_chain_b"]
 
 [token]
-owner_address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-name = "TestSuperchainERC20"
-symbol = "TSU"
+owner_address = "0xe4721a80c6e56f4ebeed6acee91b3ee715e7dd64"
+name = "zkWormholesERC20"
+symbol = "zkERC20"
 decimals = 18

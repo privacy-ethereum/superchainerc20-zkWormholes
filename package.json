@@ -21,7 +21,11 @@
     "mprocs": "^0.7.1",
     "nx": "^20.0.7",
     "prettier": "^3.3.3",
-    "supersim": "^0.0.5",
+    "supersim": "0.1.0-alpha.59",
     "wait-port": "^1.1.0"
+  },
+  "engines": {
+    "node": "22",
+    "pnpm": "9 || 10"
   }
 }

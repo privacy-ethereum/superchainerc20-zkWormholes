@@ -1,7 +1,7 @@
 pragma circom 2.2.0;
 
 /**
- * RLPEncodeReceipt
+ * RLPEncode
  *
  * This circuit takes pre-computed start bytes and RLP-encodes the remaining
  * ERC20 Transfer event data (sender, receiver, amount) then concatenates them.
@@ -15,7 +15,7 @@ pragma circom 2.2.0;
  * Outputs:
  * - out[426]: Complete RLP-encoded receipt: startBytes || rlpSender || rlpReceiver || rlpAmount
  */
-template RLPEncodeReceipt() {
+template RLPEncode() {
     // Length constants
     var START_BYTES_LEN = 327; // (type + receipt prefix + status + gas + bloom + log prefixes + address + topics prefix + topic0)
     var TOPIC_LEN = 32; // Ethereum addresses (20 bytes + 12 bytes padding = 32 bytes)

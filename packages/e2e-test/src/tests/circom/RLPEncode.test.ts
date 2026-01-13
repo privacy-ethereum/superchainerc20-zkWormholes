@@ -10,9 +10,9 @@ import { concatBytes } from '@ethereumjs/util'
 import { hexToBytes } from 'viem'
 
 describe('RLPEncode', async () => {
-  const circuit = await circomkit.WitnessTester(`RLPEncodeReceipt`, {
-    file: 'RLPEncodeReceipt',
-    template: 'RLPEncodeReceipt',
+  const circuit = await circomkit.WitnessTester(`RLPEncode`, {
+    file: 'RLPEncode',
+    template: 'RLPEncode',
   })
 
   const receipt: RawRpcReceipt = {

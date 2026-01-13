@@ -1,6 +1,6 @@
 {
-    "RLPEncodeReceipt": {
-        "file": "RLPEncodeReceipt",
-        "template": "RLPEncodeReceipt"
+    "RLPEncode": {
+        "file": "RLPEncode",
+        "template": "RLPEncode"
     }
 }

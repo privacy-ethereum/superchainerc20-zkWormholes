@@ -1,11 +1,14 @@
 import { testClientByChain, testClients } from '@/utils/clients'
 import {
   decodeEventLog,
+  pad,
   parseEther,
   parseUnits,
   numberToHex,
   TransactionReceipt,
   Hex,
+  toHex,
+  toEventSelector,
 } from 'viem'
 import {
   generatePrivateKey,
@@ -39,6 +42,8 @@ describe('receipt trie', async () => {
     ...l2NativeSuperchainERC20Contract,
     functionName: 'decimals',
   })
+
+  const amountToSend = parseUnits('10', decimals)
 
   let receipt: TransactionReceipt
   let receipts: RawRpcReceipt[]
@@ -96,13 +101,11 @@ describe('receipt trie', async () => {
   })
 
   it('should execute an ERC-20 token transfer and capture transaction receipt', async () => {
-    const amount = parseUnits('10', decimals)
-
     const hash = await testClientByChain.supersimL2A.writeContract({
       account: testAccount,
       ...l2NativeSuperchainERC20Contract,
       functionName: 'transfer',
-      args: [recipientAccount.address, amount],
+      args: [recipientAccount.address, amountToSend],
     })
 
     receipt = await testClientByChain.supersimL2A.waitForTransactionReceipt({
@@ -135,7 +138,7 @@ describe('receipt trie', async () => {
     expect(decodedLog.eventName).toBe('Transfer')
     expect(args.from).toBe(testAccount.address)
     expect(args.to).toBe(recipientAccount.address)
-    expect(args.amount).toBe(amount)
+    expect(args.amount).toBe(amountToSend)
 
     // Verify recipient received tokens
     const recipientBalance = await testClientByChain.supersimL2A.readContract({
@@ -143,7 +146,7 @@ describe('receipt trie', async () => {
       functionName: 'balanceOf',
       args: [recipientAccount.address],
     })
-    expect(recipientBalance).toBe(amount)
+    expect(recipientBalance).toBe(amountToSend)
   })
 
   it('should download block receipts and receipt-trie root hash for a given block', async () => {
@@ -160,6 +163,54 @@ describe('receipt trie', async () => {
 
     expect(block.receiptsRoot).toBeDefined()
     expect(receipts.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it("should be the same transaction log as the downloaded receipt's log", async () => {
+    const transactionLog = receipt.logs[0]
+    const downloadedLog = receipts[0].logs[0]
+
+    // @ts-expect-error - Runtime conversion works; viem types don't reflect mutability
+    transactionLog.blockNumber = toHex(transactionLog.blockNumber)
+    // @ts-expect-error
+    transactionLog.logIndex = toHex(transactionLog.logIndex)
+    // @ts-expect-error
+    transactionLog.transactionIndex = toHex(transactionLog.transactionIndex)
+
+    expect(transactionLog).toStrictEqual(downloadedLog)
+  })
+
+  it("should be the transfer event selector in the log's first topic [0]", async () => {
+    const firstTopic = receipts[0].logs[0].topics[0].toLowerCase()
+
+    const transferEventSelector = toEventSelector(
+      'Transfer(address,address,uint256)',
+    )
+
+    expect(firstTopic).toBe(transferEventSelector)
+  })
+
+  it("should be the padded sender address in the log's second topic [1]", async () => {
+    const sender = pad(testAccount.address).toLowerCase()
+
+    const secondTopic = receipts[0].logs[0].topics[1]
+
+    expect(secondTopic).toBe(sender)
+  })
+
+  it("should be the padded recipient address in the log's third topic [2]", async () => {
+    const recipient = pad(recipientAccount.address).toLowerCase()
+
+    const thirdTopic = receipts[0].logs[0].topics[2]
+
+    expect(thirdTopic).toBe(recipient)
+  })
+
+  it('should have the padded sended amount as hex in the log data', async () => {
+    const paddedAmountToSendInHex = pad(toHex(amountToSend))
+
+    const logData = receipts[0].logs[0].data
+
+    expect(logData).toBe(paddedAmountToSendInHex)
   })
 
   it('should locally build the receipt trie with the ERC20 transfer log', async () => {

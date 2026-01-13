@@ -12,6 +12,7 @@
     "@eth-optimism/viem": "^0.0.11",
     "@superchainerc20-starter/contracts": "workspace:*",
     "abitype": "^1.0.6",
+    "circomkit": "^0.3.4",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.10.0",
     "viem": "^2.21.37",

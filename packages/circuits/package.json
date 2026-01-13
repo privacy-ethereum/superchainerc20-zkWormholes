@@ -1,0 +1,25 @@
+{
+    "name": "circuits",
+    "version": "1.0.0",
+    "description": "zkWormholes Circom circuits for private cross-chain ERC20 transfers",
+    "main": "index.js",
+    "scripts": {
+        "clean": "rm -rf build/",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "circom",
+        "zkp",
+        "zero-knowledge",
+        "ethereum",
+        "superchain",
+        "erc20",
+        "privacy"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "circomlib": "^2.0.5",
+        "keccak256-june-in-exile": "git+https://github.com/june-in-exile/keccak256-circom"
+    }
+}

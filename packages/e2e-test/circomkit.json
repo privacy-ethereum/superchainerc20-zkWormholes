@@ -1,7 +1,7 @@
 {
     "protocol": "groth16",
     "prime": "bn128",
-    "version": "2.2.3",
+    "version": "2.2.0",
     "circuits": "../circuits/circuits.json",
     "dirPtau": "../circuits/ptau",
     "dirCircuits": "../circuits/circom",

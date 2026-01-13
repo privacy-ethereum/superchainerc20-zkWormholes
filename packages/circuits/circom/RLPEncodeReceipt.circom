@@ -1,72 +1,65 @@
-pragma circom 2.2.2;
-
-include "circomlib/circuits/bitify.circom";
+pragma circom 2.2.0;
 
 /**
- * RLPEncodeReceipt - Encodes an Ethereum transaction receipt in RLP format
+ * RLPEncodeReceipt
  *
- * This circuit takes a receipt structure matching the RawRpcReceipt type and
- * encodes it according to Ethereum's RLP encoding rules for receipts.
+ * This circuit takes pre-computed start bytes and RLP-encodes the remaining
+ * ERC20 Transfer event data (sender, receiver, amount) then concatenates them.
  *
- * Receipt structure (post-EIP-2718):
- * - type byte (for type != 0)
- * - RLP([status, cumulativeGasUsed, logsBloom, logs])
+ * Inputs:
+ * - startBytes[327]: Pre-computed prefix (type, receipt header, bloom, log prefix, topic0, ...)
+ * - sender[32]: ERC20 Transfer topic1 (address `from`, padded to 32 bytes)
+ * - receiver[32]: ERC20 Transfer topic2 (address `to`, padded to 32 bytes)
+ * - amount[32]: ERC20 Transfer data (uint256 `amount`, padded to 32 bytes)
  *
- * Each log is: [address, [topics], data]
- *
- * For simplicity, this initial version handles receipts with a single log entry
- * and no topics (as shown in the test case).
+ * Outputs:
+ * - out[426]: Complete RLP-encoded receipt: startBytes || rlpSender || rlpReceiver || rlpAmount
  */
 template RLPEncodeReceipt() {
-    // Maximum sizes based on the test case
-    var MAX_LOGS = 1;
-    var MAX_TOPICS_PER_LOG = 0;
-    var MAX_DATA_BYTES = 32; // 0x20 bytes for uint256
-    var LOGS_BLOOM_BYTES = 256; // 0x100 bytes
-    var MAX_OUTPUT_BYTES = 512; // Conservative estimate
+    // Length constants
+    var START_BYTES_LEN = 327; // (type + receipt prefix + status + gas + bloom + log prefixes + address + topics prefix + topic0)
+    var TOPIC_LEN = 32; // Ethereum addresses (20 bytes + 12 bytes padding = 32 bytes)
+    var RLP_ENCODED_32_BYTE_LEN = 1 + TOPIC_LEN;  // 0xa0 prefix + 32 bytes
+    var TOTAL_OUTPUT_LEN = START_BYTES_LEN + (RLP_ENCODED_32_BYTE_LEN * 3); // 327 + (33 + 33 + 33)
 
-    // Receipt fields
-    signal input type; // Transaction type (0, 1, 2, etc.)
-    signal input status; // 0x0 or 0x1
-    signal input cumulativeGasUsed; // Gas used
-    signal input logsBloom[LOGS_BLOOM_BYTES]; // Logs bloom filter (256 bytes)
+    /* PRIVATE INPUTS: */
+    signal input startBytes[START_BYTES_LEN];
+    signal input sender[TOPIC_LEN];
+    signal input receiver[TOPIC_LEN];
+    signal input amount[TOPIC_LEN];
 
-    // Log entry (single log for now)
-    signal input logAddress; // 160-bit address
-    signal input logDataLength; // Length of log data in bytes
-    signal input logData[MAX_DATA_BYTES]; // Log data bytes
+    /* OUTPUT: */
+    signal output out[TOTAL_OUTPUT_LEN];
 
-    // Outputs
-    signal output encoded[MAX_OUTPUT_BYTES]; // RLP encoded receipt
-    signal output encodedLen; // Actual length in bytes
+    var outIdx = 0;
 
-    // This is a placeholder implementation
-    // The actual RLP encoding is complex and requires:
-    // 1. Converting numbers to minimal big-endian byte representation
-    // 2. Proper RLP list encoding with length prefixes
-    // 3. Handling variable-length fields
-
-    // For now, we'll create a simple structure that matches the expected output
-    // The real implementation would need to follow the exact RLP encoding rules
-
-    // Convert address to bytes
-    component addrBits = Num2Bits(160);
-    addrBits.in <== logAddress;
-
-    // Convert data to output
-    var offset = 0;
-
-    // Type byte (for type 2 transactions)
-    encoded[offset] <== type;
-    offset += 1;
-
-    // This is a simplified placeholder - actual RLP encoding would go here
-    // For the test to pass, we need to match the exact output of encodeRPCReceipt
-
-    // Set remaining bytes to 0
-    for (var i = offset; i < MAX_OUTPUT_BYTES; i++) {
-        encoded[i] <== 0;
+    // Copy startBytes (327 bytes)
+    for (var i = 0; i < START_BYTES_LEN; i++) {
+        out[outIdx] <== startBytes[i];
+        outIdx++;
     }
 
-    encodedLen <== offset;
+    out[outIdx] <== 160; // 0xa0 = 160 = 128 + 32 (RLP prefix for 32-byte string) prefix for sender
+    outIdx++;
+
+    for (var i = 0; i < TOPIC_LEN; i++) {
+        out[outIdx] <== sender[i];
+        outIdx++;
+    }
+
+    out[outIdx] <== 160; // 0xa0 = 160 = 128 + 32 (RLP prefix for 32-byte string) prefix for receiver
+    outIdx++;
+
+    for (var i = 0; i < TOPIC_LEN; i++) {
+        out[outIdx] <== receiver[i];
+        outIdx++;
+    }
+
+    out[outIdx] <== 160; // 0xa0 = 160 = 128 + 32 (RLP prefix for 32-byte string) prefix for amount
+    outIdx++;
+
+    for (var i = 0; i < TOPIC_LEN; i++) {
+        out[outIdx] <== amount[i];
+        outIdx++;
+    }
 }

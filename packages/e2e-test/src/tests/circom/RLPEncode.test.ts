@@ -7,6 +7,7 @@ import {
   RawRpcReceipt,
 } from '@/utils/receiptTrieProof'
 import { concatBytes } from '@ethereumjs/util'
+import { hexToBytes } from 'viem'
 
 describe('RLPEncode', async () => {
   const circuit = await circomkit.WitnessTester(`RLPEncodeReceipt`, {
@@ -50,11 +51,53 @@ describe('RLPEncode', async () => {
     expect(encodedReceipt).toEqual(rlpEncoded)
   })
 
-  it.skip('should encode a receipt with one event log', async () => {
-    const INPUT = {}
+  it('should encode a receipt inside the circuit', async () => {
+    const startBytes = concatStartsOfReceiptAndLog(receipt)
 
-    const OUTPUT = {}
+    const sender = hexToBytes(receipt.logs[0].topics[1])
+    const receiver = hexToBytes(receipt.logs[0].topics[2])
+    const amount = hexToBytes(receipt.logs[0].data)
+
+    const INPUT = {
+      startBytes: Array.from(startBytes),
+      sender: Array.from(sender),
+      receiver: Array.from(receiver),
+      amount: Array.from(amount),
+    }
+
+    const expectedOutput = encodeRPCReceipt(receipt)
+    const OUTPUT = {
+      out: Array.from(expectedOutput),
+    }
 
     await circuit.expectPass(INPUT, OUTPUT)
+
+    const { out } = await circuit.compute(INPUT, ['out'])
+
+    const outAsNumbers = (out as bigint[]).map(Number)
+
+    expect(outAsNumbers).toEqual(Array.from(expectedOutput))
+  })
+
+  it('should encode incorrectly if input data is incorrect', async () => {
+    const startBytes = concatStartsOfReceiptAndLog(receipt)
+
+    const sender = hexToBytes(receipt.logs[0].topics[1])
+    const amount = hexToBytes(receipt.logs[0].data)
+
+    const INPUT = {
+      startBytes: Array.from(startBytes),
+      sender: Array.from(sender),
+      receiver: Array.from(sender),
+      amount: Array.from(amount),
+    }
+
+    const expectedOutput = encodeRPCReceipt(receipt)
+
+    const { out } = await circuit.compute(INPUT, ['out'])
+
+    const outAsNumbers = (out as bigint[]).map(Number)
+
+    expect(outAsNumbers).not.toEqual(Array.from(expectedOutput))
   })
 })

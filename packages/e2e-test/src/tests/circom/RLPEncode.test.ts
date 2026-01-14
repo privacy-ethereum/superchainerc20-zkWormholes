@@ -38,7 +38,7 @@ describe('RLPEncode', async () => {
     const receiver = hexToBytes(RECEIPT.logs[0].topics[2])
     const amount = hexToBytes(RECEIPT.logs[0].data)
 
-    const INPUT = {
+    const input = {
       startBytes: Array.from(startBytes),
       sender: Array.from(sender),
       receiver: Array.from(receiver),
@@ -46,13 +46,13 @@ describe('RLPEncode', async () => {
     }
 
     const expectedOutput = encodeRPCReceipt(RECEIPT)
-    const OUTPUT = {
+    const output = {
       out: Array.from(expectedOutput),
     }
 
-    await circuit.expectPass(INPUT, OUTPUT)
+    await circuit.expectPass(input, output)
 
-    const { out } = await circuit.compute(INPUT, ['out'])
+    const { out } = await circuit.compute(input, ['out'])
     const outAsNumbers = (out as bigint[]).map(Number)
 
     expect(Array.from(expectedOutput)).toEqual(outAsNumbers)
@@ -64,14 +64,14 @@ describe('RLPEncode', async () => {
     const sender = hexToBytes(RECEIPT.logs[0].topics[1])
     const amount = hexToBytes(RECEIPT.logs[0].data)
 
-    const INPUT = {
+    const input = {
       startBytes: Array.from(startBytes),
       sender: Array.from(sender),
       receiver: Array.from(sender),
       amount: Array.from(amount),
     }
 
-    const { out } = await circuit.compute(INPUT, ['out'])
+    const { out } = await circuit.compute(input, ['out'])
     const outAsNumbers = Array.from(out as bigint[])
 
     const expectedOutput = encodeRPCReceipt(RECEIPT)

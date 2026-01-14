@@ -169,14 +169,14 @@ describe('receipt trie', async () => {
     const transactionLog = receipt.logs[0]
     const downloadedLog = receipts[0].logs[0]
 
-    // @ts-expect-error - Runtime conversion works; viem types don't reflect mutability
-    transactionLog.blockNumber = toHex(transactionLog.blockNumber)
-    // @ts-expect-error
-    transactionLog.logIndex = toHex(transactionLog.logIndex)
-    // @ts-expect-error
-    transactionLog.transactionIndex = toHex(transactionLog.transactionIndex)
+    const newTransactionLog = {
+      ...transactionLog,
+      blockNumber: toHex(transactionLog.blockNumber),
+      logIndex: toHex(transactionLog.logIndex),
+      transactionIndex: toHex(transactionLog.transactionIndex),
+    }
 
-    expect(transactionLog).toStrictEqual(downloadedLog)
+    expect(newTransactionLog).toStrictEqual(downloadedLog)
   })
 
   it("should be the transfer event selector in the log's first topic [0]", async () => {

@@ -19,7 +19,6 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "circomlib": "^2.0.5",
-        "keccak256-june-in-exile": "git+https://github.com/june-in-exile/keccak256-circom"
+        "circomlib": "^2.0.5"
     }
 }

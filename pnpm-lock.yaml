@@ -38,9 +38,6 @@ importers:
       circomlib:
         specifier: ^2.0.5
         version: 2.0.5
-      keccak256-june-in-exile:
-        specifier: git+https://github.com/june-in-exile/keccak256-circom
-        version: keccak256-circom@https://codeload.github.com/june-in-exile/keccak256-circom/tar.gz/f9c5d4f84b41d7c199b34e5983fd13b711d9c815
 
   packages/contracts:
     dependencies:
@@ -4227,10 +4224,6 @@ packages:
 
   jsonpath@1.1.1:
     resolution: {integrity: sha512-l6Cg7jRpixfbgoWgkrl77dgEj8RPvND0wMH6TwQmi9Qs4TFfS9u5cUFnbeKTwj5ga5Y3BTGGNI28k117LJ009w==}
-
-  keccak256-circom@https://codeload.github.com/june-in-exile/keccak256-circom/tar.gz/f9c5d4f84b41d7c199b34e5983fd13b711d9c815:
-    resolution: {tarball: https://codeload.github.com/june-in-exile/keccak256-circom/tar.gz/f9c5d4f84b41d7c199b34e5983fd13b711d9c815}
-    version: 1.0.0
 
   keccak@3.0.4:
     resolution: {integrity: sha512-3vKuW0jV8J3XNTzvfyicFR5qvxrSAGl7KIhvgOu5cmWwM7tZRj3fMbj/pfIf4be7aznbc+prBWGjywox/g2Y6Q==}
@@ -11080,13 +11073,6 @@ snapshots:
       esprima: 1.2.2
       static-eval: 2.0.2
       underscore: 1.12.1
-
-  keccak256-circom@https://codeload.github.com/june-in-exile/keccak256-circom/tar.gz/f9c5d4f84b41d7c199b34e5983fd13b711d9c815:
-    dependencies:
-      circomlib: 2.0.5
-      snarkjs: 0.7.5
-    transitivePeerDependencies:
-      - react-native-b4a
 
   keccak@3.0.4:
     dependencies:

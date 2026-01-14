@@ -88,6 +88,7 @@ export function concatStartOfReceipt(receipt: RawRpcReceipt): Uint8Array {
   const bytes = concatBytes(listPrefix, statusEncoded, gasEncoded, bloomEncoded)
 
   const txType = Number(receipt.type)
+
   if (txType === TransactionType.Legacy) {
     return bytes
   }

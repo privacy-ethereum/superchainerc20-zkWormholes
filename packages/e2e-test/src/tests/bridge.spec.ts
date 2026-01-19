@@ -8,10 +8,6 @@ import {
   privateKeyToAccount,
   toAccount,
 } from 'viem/accounts'
-import {
-  createInteropSentL2ToL2Messages,
-  decodeRelayedL2ToL2Messages,
-} from '@eth-optimism/viem'
 
 const testPrivateKey = generatePrivateKey()
 const testAccount = privateKeyToAccount(testPrivateKey)
@@ -24,7 +20,7 @@ const l2NativeSuperchainERC20Contract = {
   abi: L2NativeSuperchainERC20Abi,
 } as const
 
-describe('bridge token from L2 to L2', async () => {
+describe('bridge token from L2 to L2', { timeout: 20 * 1000 }, async () => {
   const decimals = await testClientByChain.supersimL2A.readContract({
     ...l2NativeSuperchainERC20Contract,
     functionName: 'decimals',
@@ -90,42 +86,30 @@ describe('bridge token from L2 to L2', async () => {
         to: testAccount.address,
       })
 
-      const receipt = await sourceClient.waitForTransactionReceipt({
+      await sourceClient.waitForTransactionReceipt({
         hash,
       })
 
-      // Extract the cross-chain message from the bridge transaction
-      const { sentMessages } = await createInteropSentL2ToL2Messages(
-        // @ts-expect-error
-        sourceClient,
-        { receipt },
-      )
-      expect(sentMessages).toHaveLength(1)
+      // With supersim's --interop.autorelay, the message is automatically relayed
+      // We just need to wait for the balance to update on the destination chain
+      const maxAttempts = 50
+      let attempts = 0
+      let endingBalance = startingDestinationBalance
 
-      // Relay the message on the destination chain (L2B)
-      const relayMessageTxHash = await destinationClient.relayL2ToL2Message({
-        account: testAccount,
-        sentMessageId: sentMessages[0].id,
-        sentMessagePayload: sentMessages[0].payload,
-      })
-
-      const relayMessageReceipt =
-        await destinationClient.waitForTransactionReceipt({
-          hash: relayMessageTxHash,
+      while (attempts < maxAttempts) {
+        endingBalance = await destinationClient.readContract({
+          ...l2NativeSuperchainERC20Contract,
+          functionName: 'balanceOf',
+          args: [testAccount.address],
         })
 
-      // Verify the message was successfully processed
-      const { successfulMessages } = decodeRelayedL2ToL2Messages({
-        receipt: relayMessageReceipt,
-      })
-      expect(successfulMessages).length(1)
+        if (endingBalance === startingDestinationBalance + amountToBridge) {
+          break
+        }
 
-      // Verify the balance increased by 10 tokens on L2B
-      const endingBalance = await destinationClient.readContract({
-        ...l2NativeSuperchainERC20Contract,
-        functionName: 'balanceOf',
-        args: [testAccount.address],
-      })
+        await new Promise((resolve) => setTimeout(resolve, 400)) // Wait 0.4 seconds before checking again
+        attempts++
+      }
 
       expect(endingBalance).toEqual(startingDestinationBalance + amountToBridge)
     },

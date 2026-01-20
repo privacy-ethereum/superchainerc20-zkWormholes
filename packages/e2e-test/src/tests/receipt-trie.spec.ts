@@ -12,7 +12,7 @@ import {
   privateKeyToAccount,
   toAccount,
 } from 'viem/accounts'
-import { beforeAll, describe, it, expect } from 'vitest'
+import { beforeAll, describe, it, expect, beforeEach } from 'vitest'
 import { envVars } from '@/envVars'
 import { L2NativeSuperchainERC20Abi } from '@/abi/L2NativeSuperchainERC20Abi'
 import { buildReceiptTrie, RawRpcReceipt } from '@/utils/receiptTrieProof'
@@ -60,10 +60,7 @@ describe('receipt trie', async () => {
       }),
     )
 
-    // Impersonate the minter account and mint tokens to the test account
-    await testClientByChain.supersimL2A.impersonateAccount({
-      address: envVars.VITE_TOKEN_MINTER_ADDRESS,
-    })
+    // testAccount is the token owner according to default .env
     const hash = await testClientByChain.supersimL2A.writeContract({
       account: minterAccount,
       address: envVars.VITE_TOKEN_CONTRACT_ADDRESS,
@@ -71,7 +68,12 @@ describe('receipt trie', async () => {
       functionName: 'mintTo',
       args: [testAccount.address, parseUnits('1000', decimals)],
     })
+
     await testClientByChain.supersimL2A.waitForTransactionReceipt({ hash })
+  })
+
+  beforeEach(async () => {
+    await testClientByChain.supersimL2A.mine({ blocks: 1 })
   })
 
   it('should locally build an empty receipt trie', async () => {
